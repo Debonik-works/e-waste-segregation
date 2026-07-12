@@ -1,0 +1,57 @@
+# Python virtual environments
+**/.venv/
+**/venv/
+.env
+.env.*
+!.env.example
+
+# Python cache / build
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Training artifacts
+train/runs/
+runs/
+*.pt
+!backend/model/.gitkeep
+yolov8n.pt
+yolov8*.pt
+
+# Node / frontend
+dashboard/node_modules/
+dashboard/dist/
+dashboard/.vite/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+*.iml
+
+# Graphify local cost cache
+graphify-out/cost.json
+graphify-out/cache
+
+# Merged dataset can be regenerated; keep yaml/classes if present after prepare
+# Uncomment to ignore the heavy merged images:
+dataset/train/
+dataset/valid/
+dataset/test/
+
+# Local secrets / serial notes
+*.log
+.coverage
+htmlcov/
+dataset-2/
+.agents/
+.cursor/
+.claude/

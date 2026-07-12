@@ -1,0 +1,2 @@
+# Placeholder so backend/model/ exists before training copies best.pt here.
+# After `python train.py`, this directory will contain best.pt.

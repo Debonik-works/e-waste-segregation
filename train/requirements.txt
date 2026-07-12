@@ -1,0 +1,17 @@
+# Training + dataset preparation (install only inside train/.venv)
+#
+# PyTorch: install a CUDA build so training uses your NVIDIA GPU.
+# setup_venv.ps1 / setup_venv.sh do this automatically when nvidia-smi is present.
+# Manual reinstall (Windows / Linux):
+#   .\.venv\Scripts\pip.exe uninstall -y torch torchvision
+#   .\.venv\Scripts\pip.exe install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+#
+ultralytics>=8.3.0,<9.0.0
+torch>=2.1.0
+torchvision>=0.16.0
+opencv-python-headless>=4.8.0
+PyYAML>=6.0
+numpy>=1.24.0
+Pillow>=10.0.0
+tqdm>=4.66.0
+colorlog>=6.8.0

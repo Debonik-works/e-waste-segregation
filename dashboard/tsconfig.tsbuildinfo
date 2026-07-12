@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/api.ts","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/components/confidencemeter.tsx","./src/components/conveyoranimation.tsx","./src/components/imagepanel.tsx","./src/components/predictioncard.tsx","./src/components/processingtimeline.tsx","./src/components/statusgrid.tsx"],"version":"5.9.3"}

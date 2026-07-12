@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Git / docs
+*.md
+!README.md
+
+# Tests / cache
+.pytest_cache/
+.mypy_cache/
+
+# Dev artifacts
+*.log
+.DS_Store
+
+# Do not exclude model weights — best.pt must be baked into the image
