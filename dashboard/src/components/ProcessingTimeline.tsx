@@ -5,6 +5,7 @@ type Stage = "idle" | "scan" | "process" | "decide" | "move";
 interface Props {
   stage: Stage;
   ewaste: boolean | null;
+  frameIndex?: number;
 }
 
 const STAGES: { id: Stage; label: string }[] = [
@@ -14,7 +15,7 @@ const STAGES: { id: Stage; label: string }[] = [
   { id: "move", label: "Conveyor" },
 ];
 
-export function ProcessingTimeline({ stage, ewaste }: Props) {
+export function ProcessingTimeline({ stage, ewaste, frameIndex }: Props) {
   const order = ["idle", "scan", "process", "decide", "move"];
   const currentIdx = order.indexOf(stage);
 
@@ -28,6 +29,9 @@ export function ProcessingTimeline({ stage, ewaste }: Props) {
           const idx = order.indexOf(s.id);
           const active = stage === s.id;
           const done = currentIdx > idx;
+          const label = active && (s.id === "scan" || s.id === "process") && frameIndex && frameIndex > 0
+            ? `${s.label} (${frameIndex}/5)`
+            : s.label;
           return (
             <li
               key={s.id}
@@ -46,7 +50,7 @@ export function ProcessingTimeline({ stage, ewaste }: Props) {
               >
                 {done ? "✓" : i + 1}
               </span>
-              <span className="font-body">{s.label}</span>
+              <span className="font-body">{label}</span>
               <AnimatePresence>
                 {active && (
                   <motion.span

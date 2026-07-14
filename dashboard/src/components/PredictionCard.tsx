@@ -7,6 +7,8 @@ interface Props {
   confidence: number;
   threshold: number;
   inferenceMs: number | null;
+  frameIndex?: number;
+  finalDecision?: boolean;
 }
 
 export function PredictionCard({
@@ -15,8 +17,11 @@ export function PredictionCard({
   confidence,
   threshold,
   inferenceMs,
+  frameIndex,
+  finalDecision,
 }: Props) {
-  const decided = ewaste !== null;
+  const decided = Boolean(finalDecision && ewaste !== null);
+  const isAnalyzing = Boolean(!finalDecision && frameIndex && frameIndex > 0);
 
   return (
     <motion.div
@@ -38,7 +43,7 @@ export function PredictionCard({
             Prediction
           </p>
           <h2 className="font-display text-2xl font-semibold tracking-tight text-white">
-            {decided ? (ewaste ? "E-Waste" : "Not E-Waste") : "Awaiting capture"}
+            {decided ? (ewaste ? "E-Waste" : "Not E-Waste") : isAnalyzing ? `Analyzing (${frameIndex}/5)` : "Awaiting capture"}
           </h2>
         </div>
         <span
@@ -47,10 +52,12 @@ export function PredictionCard({
               ? "bg-bin-green/20 text-bin-green"
               : decided
                 ? "bg-slate-500/20 text-slate-300"
-                : "bg-ink-700 text-slate-400"
+                : isAnalyzing
+                  ? "bg-teal-glow/20 text-teal-glow"
+                  : "bg-ink-700 text-slate-400"
           }`}
         >
-          {category || "—"}
+          {decided ? category : isAnalyzing ? "SCANNED" : "—"}
         </span>
       </div>
 
@@ -66,7 +73,7 @@ export function PredictionCard({
         <div className="rounded-lg bg-ink-800/80 px-3 py-2">
           <div className="text-[10px] uppercase tracking-wider text-slate-500">Action</div>
           <div className="text-slate-200">
-            {!decided ? "—" : ewaste ? "RIGHT → bin" : "LEFT → reject"}
+            {decided ? (ewaste ? "RIGHT → bin" : "LEFT → reject") : isAnalyzing ? "WAITING..." : "—"}
           </div>
         </div>
       </div>

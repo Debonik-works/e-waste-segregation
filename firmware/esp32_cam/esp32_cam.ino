@@ -17,14 +17,16 @@
 #include <HTTPClient.h>
 #include <Preferences.h>
 #include <ArduinoJson.h>
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
 
 Preferences prefs;
 WebServer setupServer(80);
 
-String wifiSsid = "";
-String wifiPassword = "";
-String apiBaseUrl = "http://192.168.1.10:8080";
-unsigned long intervalMs = 5000;
+String wifiSsid = "Debonik";
+String wifiPassword = "debonik@2005";
+String apiBaseUrl = "http://192.168.0.205:8080";
+unsigned long intervalMs = 1000;
 
 const int JPEG_QUALITY = 12;
 const framesize_t FRAME_SIZE = FRAMESIZE_VGA;
@@ -110,12 +112,18 @@ bool initCamera() {
   config.pin_sccb_scl = SIOC_GPIO_NUM;
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
-  config.xclk_freq_hz = 20000000;
+  config.xclk_freq_hz = 10000000; // Lowered to 10MHz to prevent FB-OVF
   config.pixel_format = PIXFORMAT_JPEG;
   config.frame_size = FRAME_SIZE;
   config.jpeg_quality = JPEG_QUALITY;
-  config.fb_count = 2;
-  config.grab_mode = CAMERA_GRAB_LATEST;
+  
+  if (psramFound()) {
+    config.fb_count = 2;
+    config.grab_mode = CAMERA_GRAB_LATEST;
+  } else {
+    config.fb_count = 1;
+    config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
+  }
 
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK) {
@@ -288,8 +296,9 @@ void setup() {
   Serial.begin(115200);
   delay(800);
   Serial.println("ESP32-CAM e-waste client starting");
+  WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); // Disable brownout detector to prevent reboots on minor voltage dips
 
-  loadPrefs();
+  // loadPrefs();
 
   if (!initCamera()) {
     Serial.println("Halting — camera init failed");
@@ -334,7 +343,7 @@ void loop() {
     return;
   }
 
-  Serial.printf("Captured %u bytes → %s\n", fb->len, predictUrl().c_str());
+  Serial.printf("Captured %u bytes (Free Heap: %u) → %s\n", fb->len, ESP.getFreeHeap(), predictUrl().c_str());
   bool success = uploadFrame(fb);
   esp_camera_fb_return(fb);
 

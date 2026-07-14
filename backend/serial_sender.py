@@ -71,7 +71,7 @@ class SerialSender:
                 timeout=self.settings.serial_timeout,
                 write_timeout=self.settings.serial_timeout,
             )
-            time.sleep(2.0)  # Nano resets on open
+            time.sleep(3.0)  # Nano resets on open
             logger.info("Serial connected on %s @ %d", port, self.settings.serial_baud)
             return True
         except Exception as exc:  # noqa: BLE001

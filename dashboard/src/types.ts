@@ -23,6 +23,8 @@ export interface LatestPayload {
   original_image_b64?: string | null;
   annotated_image_b64?: string | null;
   request_count?: number;
+  frame_index?: number;
+  final_decision?: boolean;
 }
 
 export interface HealthPayload {
@@ -79,4 +81,6 @@ export interface LiveEvent {
   annotated_image_b64?: string | null;
   timestamp?: number;
   message?: string;
+  frame_index?: number;
+  final_decision?: boolean;
 }
