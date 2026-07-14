@@ -1,7 +1,9 @@
 # Python virtual environments
 **/.venv/
 **/venv/
-
+.env
+.env.*
+!.env.example
 
 # Python cache / build
 __pycache__/
@@ -19,7 +21,6 @@ build/
 # Training artifacts / weights
 train/runs/
 runs/
-*.pt
 !backend/model/.gitkeep
 !backend/model/best.pt
 yolov8n.pt
@@ -48,6 +49,9 @@ Identify-and-Segregate-E-Waste/
 dataset/train/
 dataset/valid/
 dataset/test/
+dataset-finetune/
+Archive/
+train/_preview/
 # Keep dataset metadata if present:
 # dataset/dataset.yaml
 # dataset/classes.json

@@ -82,6 +82,21 @@ $env:TRAIN_DEVICE="0"
 
 Augmentation: [`train/augment.yaml`](../train/augment.yaml).
 
+## Fine-tune on ESP32-CAM Archive photos (not a full retrain)
+
+Put screenshots / captures in `Archive/`, then (inside `train/.venv`):
+
+```powershell
+python prepare_finetune.py   # auto-label from backend/model/best.pt → dataset-finetune/
+$env:TRAIN_REQUIRE_GPU="1"
+python finetune.py           # continue from best.pt, lower LR, few epochs → updates best.pt
+```
+
+Previous weights are copied to `backend/model/best_pre_finetune.pt` before overwrite.
+
+Env overrides: `FINETUNE_EPOCHS` (default 30), `FINETUNE_BATCH` (8), `FINETUNE_LR0` (0.001), `FINETUNE_AUTO_CONF` (0.12).
+
+
 ## 4. Export / publish weights
 
 `train.py` always copies:

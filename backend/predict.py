@@ -74,18 +74,23 @@ def decide(
     threshold: float,
     allowed: list[str],
 ) -> tuple[bool, str, float]:
-    """Pick best detection and apply confidence threshold."""
+    """
+    Pick best detection and apply confidence threshold.
+
+    Any accepted detection means e-waste (conveyor RIGHT). Category is the
+    detected slug (``ewaste`` for the single-class fine-tuned model).
+    """
     if not detections:
         return False, "unknown", 0.0
 
     best = detections[0]
     conf = float(best["confidence"])
-    category = str(best["category"])
+    category = str(best["category"]) or "ewaste"
 
     if conf < threshold:
         return False, "unknown", conf
 
-    if allowed and category not in allowed:
+    if allowed and category not in allowed and category != "ewaste":
         return False, "unknown", conf
 
     return True, category, conf
