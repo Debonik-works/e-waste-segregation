@@ -166,19 +166,40 @@ def run_prediction(image_bytes: bytes, settings: Settings | None = None) -> dict
     inference_ms = timer.elapsed * 1000.0
 
     detections = extract_detections(result, id_to_slug)
-    ewaste, category, confidence = decide(
+    single_ewaste, single_category, single_confidence = decide(
         detections,
         threshold=settings.confidence_threshold,
         allowed=settings.allowed_class_list(),
     )
 
+    # Accumulate frames in AppState
+    frame_index, final_decision, accumulated = state.add_frame_prediction({
+        "ewaste": single_ewaste,
+        "category": single_category,
+        "confidence": single_confidence,
+        "detections": detections,
+    })
+
+    # Keep showing the current annotated frame in real-time
     annotated = annotate(image, detections, settings.confidence_threshold)
     annotated_jpeg = encode_jpeg(annotated)
 
+    # Send serial command only on the 5th frame (final decision)
     serial_command: str | None = None
     serial_status: str | None = None
-    if settings.serial_enabled:
-        serial_command, serial_status = serial_sender.send_for_prediction(ewaste)
+    if final_decision:
+        final_ewaste = accumulated["ewaste"]
+        if settings.serial_enabled:
+            serial_command, serial_status = serial_sender.send_for_prediction(final_ewaste)
+        ewaste = final_ewaste
+        category = accumulated["category"]
+        confidence = accumulated["confidence"]
+        detections = accumulated["detections"]
+    else:
+        # Intermediate frames (1-4): do not trigger conveyor diversion
+        ewaste = False
+        category = single_category
+        confidence = single_confidence
 
     latest = LatestInference(
         request_id=request_id,
@@ -193,6 +214,8 @@ def run_prediction(image_bytes: bytes, settings: Settings | None = None) -> dict
         original_jpeg=original_jpeg,
         annotated_jpeg=annotated_jpeg,
         detections=detections,
+        frame_index=frame_index,
+        final_decision=final_decision,
     )
     state.set_latest(latest)
 
@@ -211,21 +234,41 @@ def run_prediction(image_bytes: bytes, settings: Settings | None = None) -> dict
             "original_image_b64": _b64(original_jpeg),
             "annotated_image_b64": _b64(annotated_jpeg),
             "timestamp": latest.timestamp,
+            "frame_index": frame_index,
+            "final_decision": final_decision,
         }
     )
 
-    fps = 1000.0 / inference_ms if inference_ms > 0 else 0.0
-    logger.info(
-        "request=%s category=%s conf=%.3f ewaste=%s inference=%.1fms fps=%.1f serial=%s/%s",
-        request_id[:8],
-        category,
-        confidence,
-        ewaste,
-        inference_ms,
-        fps,
-        serial_command,
-        serial_status,
-    )
+    if frame_index > 0:
+        if final_decision:
+            verdict_str = "♻️  E-WASTE DETECTED" if ewaste else "❌ REJECT / NOT E-WASTE"
+            logger.info(
+                "\n"
+                "============================================================\n"
+                "   [VERDICT] %s\n"
+                "   Category: %s (Confidence: %.2f)\n"
+                "   Action: Sent %s command to motor (Status: %s)\n"
+                "============================================================\n",
+                verdict_str,
+                category.upper(),
+                confidence,
+                serial_command,
+                serial_status,
+            )
+        else:
+            logger.info(
+                "Frame %d/5: category=%s conf=%.3f ewaste=%s",
+                frame_index,
+                single_category,
+                single_confidence,
+                single_ewaste,
+            )
+    else:
+        logger.info(
+            "System cooling down (no scan): category=%s conf=%.3f",
+            single_category,
+            single_confidence,
+        )
 
     return {
         "ewaste": ewaste,

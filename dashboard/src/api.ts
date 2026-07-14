@@ -94,5 +94,8 @@ export function b64ToSrc(b64: string | null | undefined): string | null {
 }
 
 export function eventsUrl(): string {
+  if (!API_BASE) {
+    return "http://127.0.0.1:8080/events";
+  }
   return apiUrl("/events");
 }

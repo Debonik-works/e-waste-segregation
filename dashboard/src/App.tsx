@@ -27,6 +27,8 @@ export default function App() {
   const [stage, setStage] = useState<Stage>("idle");
   const [setupOpen, setSetupOpen] = useState(false);
   const [deviceConfigured, setDeviceConfigured] = useState(false);
+  const [displayedOriginal, setDisplayedOriginal] = useState<string | null>(null);
+  const [displayedAnnotated, setDisplayedAnnotated] = useState<string | null>(null);
 
   const applyResult = useCallback((event: LiveEvent) => {
     setLatest({
@@ -43,9 +45,15 @@ export default function App() {
       detections: event.detections,
       original_image_b64: event.original_image_b64,
       annotated_image_b64: event.annotated_image_b64,
+      frame_index: event.frame_index,
+      final_decision: event.final_decision,
     });
-    setStage("decide");
-    window.setTimeout(() => setStage("move"), 700);
+    if (event.final_decision) {
+      setStage("decide");
+      window.setTimeout(() => setStage("move"), 700);
+    } else {
+      setStage("scan");
+    }
   }, []);
 
   // Live SSE from backend (frame → processing → result)
@@ -91,8 +99,8 @@ export default function App() {
         if (cancelled) return;
         setHealth(h);
         setCloudOk(true);
-        // Only hydrate from poll when SSE is down or we have nothing yet
-        if (!liveOk || !latest.request_id) {
+        // Hydrate from poll when SSE is down, we have nothing yet, or a newer request has completed
+        if (!liveOk || !latest.request_id || (l.available && l.request_id !== latest.request_id)) {
           if (l.available && l.phase === "result") {
             setLatest(l);
             setStage("move");
@@ -131,11 +139,14 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const original = useMemo(() => b64ToSrc(latest.original_image_b64), [latest.original_image_b64]);
-  const annotated = useMemo(
-    () => b64ToSrc(latest.annotated_image_b64),
-    [latest.annotated_image_b64]
-  );
+  useEffect(() => {
+    if (latest.original_image_b64) {
+      setDisplayedOriginal(b64ToSrc(latest.original_image_b64));
+    }
+    if (latest.annotated_image_b64) {
+      setDisplayedAnnotated(b64ToSrc(latest.annotated_image_b64));
+    }
+  }, [latest.original_image_b64, latest.annotated_image_b64]);
 
   const ewaste =
     latest.phase === "result" || stage === "decide" || stage === "move"
@@ -202,13 +213,13 @@ export default function App() {
           <div className="space-y-4 lg:col-span-2">
             <div className="grid gap-4 md:grid-cols-2">
               <ImagePanel
-                src={original}
+                src={displayedOriginal}
                 title="Live camera frame"
                 scanning={stage === "scan"}
                 emptyHint="Waiting for ESP32-CAM upload…"
               />
               <ImagePanel
-                src={annotated}
+                src={displayedAnnotated}
                 title="YOLO detection"
                 scanning={stage === "process"}
                 emptyHint="Annotated frame after inference"
@@ -225,14 +236,20 @@ export default function App() {
 
           <div className="space-y-4">
             <PredictionCard
-              ewaste={showDecision ? ewaste : null}
-              category={showDecision ? latest.category ?? "unknown" : "…"}
-              confidence={showDecision ? latest.confidence ?? 0 : 0}
+              ewaste={latest.ewaste !== undefined ? Boolean(latest.ewaste) : null}
+              category={latest.category ?? "unknown"}
+              confidence={latest.confidence ?? 0}
               threshold={threshold}
-              inferenceMs={showDecision ? latest.inference_ms ?? null : null}
+              inferenceMs={latest.inference_ms ?? null}
+              frameIndex={latest.frame_index}
+              finalDecision={latest.final_decision}
             />
             <div className="rounded-xl border border-white/5 bg-ink-900/80 p-5">
-              <ProcessingTimeline stage={stage} ewaste={showDecision ? ewaste : null} />
+              <ProcessingTimeline
+                stage={stage}
+                ewaste={showDecision ? ewaste : null}
+                frameIndex={latest.frame_index}
+              />
             </div>
           </div>
         </div>
